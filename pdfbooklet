@@ -1,0 +1,73 @@
+#!/bin/sh
+
+# Print help
+if [ ${#@} -lt 3 ]; then
+    echo "$(basename $0) /path/to/input.pdf output.pdf /path/to/blank-page.pdf"
+fi
+
+# Associate parameters
+ifile="$(readlink -f $1)"
+ofile=$2
+blank="$(readlink -f $3)"
+
+# Safety checks
+if [ -f "${ofile}" ]; then
+    echo -n "File ${ofile} already exists, continuing will replace the file. Continue? y/n: "
+    read choice;
+    # if choice is empty or not "y", exit
+    if [ -z "${choice}" ] || [ "${choice}" != "y" ]; then
+        exit
+    fi
+fi
+
+# Switch to tmp directory
+pwd="$(pwd)"
+wdir="/tmp/${ofile}_pbf"
+mkdir -p "${wdir}"
+cd "${wdir}"
+
+# pdftk "${ifile}" burst
+
+pages0=$(pdftk "${ifile}" dump_data | grep NumberOfPages | cut -d" " -f2)
+blanks=$[4 - $pages0 % 4]
+pages1=$[$pages0 + $blanks]
+# echo $pages1
+
+# Determine format
+# Determine number of digits in page numbers
+z=${#pages1}
+
+function format() {
+    if [ $1 -gt $pages0 ]; then
+        echo blank.pdf
+    else
+        printf "%0"$z"d.pdf" $1
+    fi
+}
+
+# Build sort order string
+pageorder=""
+m=$pages1
+i=0
+while [ $i -le $[m/2-1] ]; do
+    if [ $i -ne 0 ]; then pageorder+=" "; fi
+    # pageorder+="$[m-i] $[1+i] $[2+i] $[m-(i+1)]"
+    pageorder+=$(format $[m-i])" "
+    pageorder+=$(format $[1+i])" "
+    i=$[i+1]
+    pageorder+=$(format $[1+i])" "
+    pageorder+=$(format $[m-i])
+    i=$[i+1]
+done
+
+# Burst input PDF
+pdftk "${ifile}" burst output "%0"$z"d.pdf"
+
+# Create blank
+ln -sf "${3}" blank.pdf
+# Unite PDF
+pdftk $pageorder cat output "${pwd}/${ofile}"
+
+# Cleanup
+cd "${pwd}"
+rm -rf "${wdir}"
