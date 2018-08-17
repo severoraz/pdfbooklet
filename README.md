@@ -3,7 +3,7 @@ A SH script for compiling a PDF into a [2-up format](https://en.wikipedia.org/wi
 
 **Syntax:**
 ```sh
-pdfbooklet /path/to/input.pdf output.pdf /path/to/blank_page.pdf
+pdfbooklet path/to/input.pdf path/to/output.pdf path/to/blank_page.pdf
 ```
 
 
