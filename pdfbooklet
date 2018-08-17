@@ -2,13 +2,14 @@
 
 # Print help
 if [ ${#@} -lt 3 ]; then
-    echo "$(basename $0) /path/to/input.pdf output.pdf /path/to/blank-page.pdf"
+    echo "$(basename $0) /path/to/input.pdf /path/to/output.pdf /path/to/blank-page.pdf"
+    exit
 fi
 
 # Associate parameters
-ifile="$(readlink -f $1)"
-ofile=$2
-blank="$(readlink -f $3)"
+ifile=$(realpath "${1}")
+ofile=$(realpath "${2}")
+blank=$(realpath "${3}")
 
 # Safety checks
 if [ -f "${ofile}" ]; then
@@ -22,7 +23,7 @@ fi
 
 # Switch to tmp directory
 pwd="$(pwd)"
-wdir="/tmp/${ofile}_pbf"
+wdir="/tmp/$(basename ${ofile})_pbf"
 mkdir -p "${wdir}"
 cd "${wdir}"
 
@@ -66,7 +67,7 @@ pdftk "${ifile}" burst output "%0"$z"d.pdf"
 # Create blank
 ln -sf "${3}" blank.pdf
 # Unite PDF
-pdftk $pageorder cat output "${pwd}/${ofile}"
+pdftk $pageorder cat output "${ofile}"
 
 # Cleanup
 cd "${pwd}"
