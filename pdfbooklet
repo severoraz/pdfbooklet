@@ -10,6 +10,7 @@ fi
 ifile=$(realpath "${1}")
 ofile=$(realpath "${2}")
 blank=$(realpath "${3}")
+echo $blank
 
 # Safety checks
 if [ -f "${ofile}" ]; then
@@ -23,14 +24,16 @@ fi
 
 # Switch to tmp directory
 pwd="$(pwd)"
-wdir="/tmp/$(basename ${ofile})_pbf"
+wdir="/tmp/$(basename ${ofile})_pdf"
 mkdir -p "${wdir}"
 cd "${wdir}"
 
 # pdftk "${ifile}" burst
 
 pages0=$(pdftk "${ifile}" dump_data | grep NumberOfPages | cut -d" " -f2)
+# Determine number of blanks
 blanks=$[4 - $pages0 % 4]
+if [ $blanks -eq 4 ]; then blanks=0; fi
 pages1=$[$pages0 + $blanks]
 # echo $pages1
 
@@ -65,7 +68,7 @@ done
 pdftk "${ifile}" burst output "%0"$z"d.pdf"
 
 # Create blank
-ln -sf "${3}" blank.pdf
+ln -sf "${blank}" blank.pdf
 # Unite PDF
 pdftk $pageorder cat output "${ofile}"
 
